@@ -1,5 +1,4 @@
 from tensorflow.keras.applications import VGG16
-
 from encoding import Encoding
 from decoding import Decoding
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
@@ -16,6 +15,7 @@ img_channels = 3
 w1 = 1
 w2 = 0
 import os
+
 vgg16 = VGG16(weights='imagenet', include_top=False)
 
 
@@ -36,16 +36,21 @@ def lossFunction(y_true, y_pred):
     # L = LV(E,D) + w1*Lc(E) + w2*Lq(E)
     Lv = mean_squared_error(y_true, y_pred)
     # l1 = ew-abs(ew-max(|G-L(I)|-Mo,M0))
-    l1 = tf.keras.regularizers.l1(tf.keras.backend.maximum(tf.keras.backend.abs(y_true - y_pred) - 70, 0))
-    lc = tf.keras.regularizers.l1(vgg16.predict(y_true)-vgg16.predict(y_pred))
-    ls = tf.keras.regularizers.l1(tf.image.total_variation(y_true)-tf.image.total_variation(y_true))
-    Lc = l1 + 1**(-7)*lc + 0.5*ls
+    l1 = tf.norm(
+        tf.keras.backend.maximum(tf.keras.backend.abs(y_true - y_pred) - tf.constant(70.0, shape=(512, 512, 3)),
+                                 tf.constant(0.0, shape=(512, 512, 3))), ord=1)
+    # lc = tf.norm(vgg16.predict(y_true,steps=tf.size(y_true)/32)-vgg16.predict(y_pred,steps=tf.size(y_true)/32),ord=1)
+    lc = 0
+    ls = tf.norm(tf.image.total_variation(y_true) - tf.image.total_variation(y_true), ord=1)
+    Lc = l1 + 1 ** (-7) * lc + 0.5 * ls
     # Lq = Element-wise-minum(G-Md)
-    Lq = tf.keras.regularizers.l1(tf.keras.backend.minimum(tf.keras.backend.abs(y_true - y_pred)))
+    Lq = tf.norm(tf.keras.backend.minimum(tf.keras.backend.abs(y_true - y_pred), tf.constant(0.0, shape=(512, 512, 3))),
+                 ord=1)
+    # print(Lv + w1 * Lc + w2 * Lq)
     return Lv + w1 * Lc + w2 * Lq
 
 
-def train(enc,dec):
+def train(enc, dec):
     for file in os.listdir("./data/color"):
         if file.endswith(".jpg"):
             print(os.path.join(file))
@@ -59,25 +64,24 @@ def train(enc,dec):
             enc.fit(x, x)
             dec.fit(enc.predict(x),x)
 
+
 image_tensor = layers.Input(shape=(512, 512, 3))
 encodig_output = Encoding(image_tensor)
 
 enc = models.Model(inputs=[image_tensor], outputs=[encodig_output])
+decoding_output = Decoding(image_tensor)
 
-decoding_output = Decoding(encodig_output)
-
-dec = models.Model(inputs=[encodig_output], outputs=[decoding_output])
-
+dec = models.Model(inputs=[image_tensor], outputs=[decoding_output])
 enc.compile(optimizer='sgd',
-              loss=lossFunction,
-              metrics=['mse'])
+            loss=lossFunction,
+            metrics=['mse'])
 dec.compile(optimizer='sgd',
-              loss=lossFunction,
-              metrics=['mse'])
+            loss=lossFunction,
+            metrics=['mse'])
 # model.compile(optimizer='adam',
 #               loss=tf.keras.losses.MeanSquaredError(),
 #               metrics=['mse'])
-train(enc,dec)
+train(enc, dec)
 img_path = './data/color/christ_church_000317.jpg'
 img = image.load_img(img_path, target_size=(img_height, img_height))
 x = image.img_to_array(img)
