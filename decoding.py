@@ -35,7 +35,7 @@ def Decoding(x):
     for i in range(8):
         x = residual_block(x, 64, 64)
     # conv1
-    x = layers.Conv2D(64, kernel_size=(3, 3), strides=(1, 1), padding='same')(x)
+    x = layers.Conv2D(3, kernel_size=(3, 3), strides=(1, 1), padding='same')(x)
     # x = layers.BatchNormalization()(x)
     x = layers.Activation('tanh')(x)
 

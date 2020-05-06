@@ -23,12 +23,12 @@ def Encoding(x):
         shortcut = y
 
         # we modify the residual building block as a bottleneck design to make the network more economical
-        y = layers.Conv2D(nb_channels_in, kernel_size=(3, 3), strides=_strides, padding='same')(y)
+        y = layers.Conv2D(nb_channels_in, kernel_size=(3, 3), strides=_strides, padding='same',trainable=False)(y)
         # y = layers.BatchNormalization()(y)
         y = layers.Activation('relu')(y)
         # y = layers.LeakyReLU()(y)
 
-        y = layers.Conv2D(nb_channels_out, kernel_size=(3, 3), strides=_strides, padding='same')(y)
+        y = layers.Conv2D(nb_channels_out, kernel_size=(3, 3), strides=_strides, padding='same',trainable=False)(y)
         # batch normalization is employed after aggregating the transformations and before adding to the shortcut
         # y = layers.BatchNormalization()(y)
         y = layers.add([shortcut, y])
@@ -39,7 +39,7 @@ def Encoding(x):
         return y
 
     # conv1
-    x = layers.Conv2D(64, kernel_size=(3, 3), strides=(1, 1), padding='same')(x)
+    x = layers.Conv2D(64, kernel_size=(3, 3), strides=(1, 1), padding='same',trainable=False)(x)
     # x = layers.BatchNormalization()(x)
     x = layers.Activation('relu')(x)
     # 2x res
@@ -48,14 +48,14 @@ def Encoding(x):
     # 2x down
     es1 = x
 
-    x = layers.Conv2D(128, kernel_size=(3, 3), strides=(2, 2), padding='same')(x)
-    x = layers.Conv2D(128, kernel_size=(3, 3), strides=(1, 1), padding='same')(x)
+    x = layers.Conv2D(128, kernel_size=(3, 3), strides=(2, 2), padding='same',trainable=True)(x)
+    x = layers.Conv2D(128, kernel_size=(3, 3), strides=(1, 1), padding='same',trainable=True)(x)
     # x = layers.BatchNormalization()(x)
     x = layers.Activation('relu')(x)
     es2 = x
 
-    x = layers.Conv2D(256, kernel_size=(3, 3), strides=(2, 2), padding='same')(x)
-    x = layers.Conv2D(256, kernel_size=(3, 3), strides=(1, 1), padding='same')(x)
+    x = layers.Conv2D(256, kernel_size=(3, 3), strides=(2, 2), padding='same',trainable=True)(x)
+    x = layers.Conv2D(256, kernel_size=(3, 3), strides=(1, 1), padding='same',trainable=True)(x)
     # x = layers.BatchNormalization()(x)
     x = layers.Activation('relu')(x)
     # 4x res
@@ -64,13 +64,13 @@ def Encoding(x):
         x = residual_block(x, 256, 256, _strides=(1,1))
     # 2x up
     x = layers.UpSampling2D()(x)
-    x = layers.Conv2D(128, kernel_size=(3, 3), strides=(1, 1), padding='same')(x)
+    x = layers.Conv2D(128, kernel_size=(3, 3), strides=(1, 1), padding='same',trainable=True)(x)
     # x = layers.BatchNormalization()(x)
     x = layers.Activation('relu')(x)
     x = layers.add([es2, x])
 
     x = layers.UpSampling2D()(x)
-    x = layers.Conv2D(64, kernel_size=(3, 3), strides=(1, 1), padding='same')(x)
+    x = layers.Conv2D(64, kernel_size=(3, 3), strides=(1, 1), padding='same',trainable=True)(x)
     # x = layers.BatchNormalization()(x)
     x = layers.Activation('relu')(x)
     x = layers.add([es1, x])
@@ -81,7 +81,7 @@ def Encoding(x):
 
 
     # conv1
-    x = layers.Conv2D(64, kernel_size=(3, 3), strides=(1, 1), padding='same')(x)
+    x = layers.Conv2D(64, kernel_size=(3, 3), strides=(1, 1), padding='same',trainable=False)(x)
     # x = layers.BatchNormalization()(x)
     x = layers.Activation('tanh')(x)
 
